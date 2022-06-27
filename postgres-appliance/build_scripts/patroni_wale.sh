@@ -6,9 +6,6 @@
 
 export DEBIAN_FRONTEND=noninteractive
 
-PATRONIVERSION=2.1.4
-WALE_VERSION=1.1.1
-
 set -ex
 
 BUILD_PACKAGES="python3-pip python3-wheel python3-dev git patchutils binutils gcc"

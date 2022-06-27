@@ -9,6 +9,8 @@ FROM $BASE_IMAGE as dependencies-builder
 COPY dependencies/debs /builddeps/
 COPY build_scripts/walg.sh /builddeps/
 
+ENV WALG_VERSION=v2.0.0
+
 RUN bash /builddeps/walg.sh
 
 FROM $BASE_IMAGE as builder-false
@@ -36,6 +38,18 @@ ARG WITH_PERL=false
 ARG DEB_PG_SUPPORTED_VERSIONS="$PGOLDVERSIONS $PGVERSION"
 
 # Install PostgreSQL, extensions and contribs
+ENV POSTGIS_VERSION=3.2 \
+    POSTGIS_LEGACY=3.2 \
+    BG_MON_COMMIT=271c152412773c70f16bb70cb08597b91adbb947 \
+    PG_AUTH_MON_COMMIT=439697fe2980cf48f1760f45e04c2d69b2748e73 \
+    PG_MON_COMMIT=0fd850454d5e6812ad7d07ac3c9af9a3dba5abd5 \
+    SET_USER=REL3_0_0 \
+    PLPROFILER=REL4_1 \
+    PAM_OAUTH2=v1.0.1 \
+    PLANTUNER_COMMIT=800d81bc85da64ff3ef66e12aed1d4e1e54fc006 \
+    PG_PERMISSIONS_COMMIT=314b9359e3d77c0b2ef7dbbde97fa4be80e31925 \
+    PG_TM_AUX_COMMIT=6c012d38a4c1b0ba4a36952d60b0ce3a22ac9c3d
+
 RUN bash /builddeps/base.sh
 
 # Install wal-g
@@ -43,6 +57,8 @@ COPY --from=dependencies-builder /builddeps/wal-g /usr/local/bin/
 COPY build_scripts/patroni_wale.sh build_scripts/compress_build.sh /builddeps/
 
 # Install patroni and wal-e
+ENV PATRONIVERSION=2.1.4
+ENV WALE_VERSION=1.1.1
 RUN bash /builddeps/patroni_wale.sh
 
 RUN if [ "$COMPRESS" = "true" ]; then bash builddeps/compress_build.sh; fi

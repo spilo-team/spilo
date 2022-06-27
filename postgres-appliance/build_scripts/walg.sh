@@ -6,8 +6,6 @@
 
 export DEBIAN_FRONTEND=noninteractive
 
-WALG_VERSION=v2.0.0
-
 echo 'APT::Install-Recommends "0";\nAPT::Install-Suggests "0";' > /etc/apt/apt.conf.d/01norecommend
 
 apt-get update
