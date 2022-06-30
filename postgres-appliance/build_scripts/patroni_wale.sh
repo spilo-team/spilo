@@ -8,7 +8,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 set -ex
 
-BUILD_PACKAGES="python3-pip python3-wheel python3-dev git patchutils binutils gcc"
+BUILD_PACKAGES=(python3-pip python3-wheel python3-dev git patchutils binutils gcc)
 
 apt-get update
 
@@ -16,12 +16,12 @@ apt-get update
 apt-cache depends patroni \
         | sed -n -e 's/.* Depends:(python3-.\+\)$/\1/p' \
         | grep -Ev '^python3-(sphinx|etcd|consul|kazoo|kubernetes)' \
-        | xargs apt-get install -y ${BUILD_PACKAGES} python3-pystache python3-requests
+        | xargs apt-get install -y "${BUILD_PACKAGES[@]}" python3-pystache python3-requests
 
 pip3 install setuptools
 
 if [ "$DEMO" != "true" ]; then
-    EXTRAS=",etcd,consul,zookeeper,aws"
+    export EXTRAS=",etcd,consul,zookeeper,aws"
     apt-get install -y \
         python3-etcd \
         python3-consul \
@@ -38,7 +38,7 @@ if [ "$DEMO" != "true" ]; then
 
     find /usr/share/python-babel-localedata/locale-data -type f ! -name 'en_US*.dat' -delete
 
-    pip3 install filechunkio wal-e[aws,google,swift]==$WALE_VERSION google-crc32c==1.1.2 'protobuf<4.21.0' \
+    pip3 install filechunkio "wal-e[aws,google,swift]==$WALE_VERSION" google-crc32c==1.1.2 'protobuf<4.21.0' \
             'git+https://github.com/zalando/pg_view.git@master#egg=pg-view'
 
     # Non-exclusive backups
@@ -56,11 +56,11 @@ if [ "$DEMO" != "true" ]; then
     sed -i 's/^\(    for i in range(0,\) num_retries):.*/\1 100):/g' /usr/lib/python3/dist-packages/boto/utils.py
 fi
 
-pip3 install patroni[kubernetes$EXTRAS]==$PATRONIVERSION
+pip3 install "patroni[kubernetes$EXTRAS]==$PATRONIVERSION"
 
 for d in /usr/local/lib/python3.6 /usr/lib/python3; do
     cd $d/dist-packages
-    find . -type d -name tests | xargs rm -fr
+    find . -type d -name tests -print0 | xargs -0 rm -fr
     find . -type f -name 'test_*.py*' -delete
 done
 find . -type f -name 'unittest_*.py*' -delete
@@ -68,7 +68,7 @@ find . -type f -name '*_test.py' -delete
 find . -type f -name '*_test.cpython*.pyc' -delete
 
 # Clean up
-apt-get purge -y ${BUILD_PACKAGES}
+apt-get purge -y "${BUILD_PACKAGES[@]}"
 apt-get autoremove -y
 apt-get clean
 rm -rf /var/lib/apt/lists/* \
