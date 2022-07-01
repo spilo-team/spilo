@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 sed -i "s|/var/lib/postgresql.*|$PGHOME:/bin/bash|" /etc/passwd
 
@@ -10,7 +10,7 @@ ln -s "$RW_DIR/cron" /var/spool/cron
 ln -s "$RW_DIR/tmp" /var/tmp
 
 for d in /etc/service/*; do
-    chmod 755 "$d/*"
+    chmod 755 "$d"/*
     ln -s /run/supervise/"$(basename "$d")" "$d/supervise"
 done
 

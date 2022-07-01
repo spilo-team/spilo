@@ -262,7 +262,7 @@ if [ "$DEMO" != "true" ]; then
 
     set +x
 
-    for v1 in $(find /usr/share/postgresql -mindepth 1 -maxdepth 1 | sort -Vr); do
+    for v1 in $(find /usr/share/postgresql -type d -mindepth 1 -maxdepth 1 | sort -Vr); do
         # relink files with the same content
         cd "$v1/extension"
         while IFS= read -r -d '' orig
@@ -273,7 +273,7 @@ if [ "$DEMO" != "true" ]; then
                     rm "$f" && ln -s "$orig" "$f"
                 fi
             done
-        done <  <(find . -maxdepth 1 -name '*.sql' -not -name '*--*')
+        done <  <(find . -type f -maxdepth 1 -name '*.sql' -not -name '*--*')
 
         for e in pgq pgq_node plproxy address_standardizer address_standardizer_data_us; do
             orig=$(basename "$(find . -maxdepth 1 -type f -name "$e--*--*.sql" | head -n1)")
@@ -289,7 +289,7 @@ if [ "$DEMO" != "true" ]; then
 
         # relink files with the same name and content across different major versions
         started=0
-        for v2 in $(find /usr/share/postgresql -mindepth 1 -maxdepth 1 | sort -Vr); do
+        for v2 in $(find /usr/share/postgresql -type d -mindepth 1 -maxdepth 1 | sort -Vr); do
             if [ "${v2##*/}" = "15" ]; then
                 continue
             fi

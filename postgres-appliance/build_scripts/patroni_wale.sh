@@ -21,7 +21,7 @@ apt-cache depends patroni \
 pip3 install setuptools
 
 if [ "$DEMO" != "true" ]; then
-    export EXTRAS=",etcd,consul,zookeeper,aws"
+    EXTRAS=",etcd,consul,zookeeper,aws"
     apt-get install -y \
         python3-etcd \
         python3-consul \
@@ -54,6 +54,8 @@ if [ "$DEMO" != "true" ]; then
             | patch -d /usr/local/lib/python3.6/dist-packages/wal_e -Rp2
     # https://github.com/wal-e/wal-e/issues/318
     sed -i 's/^\(    for i in range(0,\) num_retries):.*/\1 100):/g' /usr/lib/python3/dist-packages/boto/utils.py
+else
+    EXTRAS=""
 fi
 
 pip3 install "patroni[kubernetes$EXTRAS]==$PATRONIVERSION"

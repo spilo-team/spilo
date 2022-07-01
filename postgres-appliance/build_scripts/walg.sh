@@ -50,7 +50,7 @@ elif [ "$ARCH" != "amd64" ]; then
 else
     # In order to speed up amd64 build we just download the binary from GH
     DISTRIB_RELEASE=$(sed -n 's/DISTRIB_RELEASE=//p' /etc/lsb-release)
-    curl -sL https://github.com/wal-g/wal-g/releases/download/"$WALG_VERSION"/wal-g-pg-ubuntu-"$DISTRIB_RELEASE"-amd64.tar.gz \
+    curl -sL "https://github.com/wal-g/wal-g/releases/download/$WALG_VERSION/wal-g-pg-ubuntu-$DISTRIB_RELEASE-amd64.tar.gz" \
                 | tar -C /builddeps/wal-g -xz
-    mv /builddeps/wal-g/wal-g-pg-ubuntu-"$DISTRIB_RELEASE"-amd64 /builddeps/wal-g/wal-g
+    mv "/builddeps/wal-g/wal-g-pg-ubuntu-$DISTRIB_RELEASE-amd64" /builddeps/wal-g/wal-g
 fi

@@ -100,7 +100,7 @@ COPY runit /etc/service/
 COPY pgq_ticker.ini $PGHOME/
 COPY build_scripts/post_build.sh /builddeps/
 
-RUN  bash /builddeps/post_build.sh && rm -rf /builddeps/
+RUN sh /builddeps/post_build.sh && rm -rf /builddeps/
 
 COPY scripts bootstrap major_upgrade /scripts/
 COPY launch.sh /
