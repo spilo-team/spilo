@@ -5,7 +5,8 @@
 ## -------------------------
 
 export DEBIAN_FRONTEND=noninteractive
-
+MAKEFLAGS="-j $(grep -c ^processor /proc/cpuinfo)"
+export MAKEFLAGS
 ARCH="$(dpkg --print-architecture)"
 
 echo -e 'APT::Install-Recommends "0";\nAPT::Install-Suggests "0";' > /etc/apt/apt.conf.d/01norecommend
@@ -19,22 +20,19 @@ if [ "$ARCH" != "amd64" ]; then
     apt-get update
     apt-get install -y golang-go liblzo2-dev brotli libsodium-dev git make cmake gcc
     go version
-fi
 
-if [ "$ARCH" != "amd64" ]; then git clone -b "$WALG_VERSION" --recurse-submodules https://github.com/wal-g/wal-g.git; fi
+    git clone -b "$WALG_VERSION" --recurse-submodules https://github.com/wal-g/wal-g.git
+    cd /wal-g || exit 1
+    go get -v -t -d ./...
+    go mod vendor
 
-cd /wal-g || exit 1
+    bash link_brotli.sh
+    bash link_libsodium.sh
 
-if [ "$ARCH" != "amd64" ]; then go get -v -t -d ./... && go mod vendor; fi
-if [ "$ARCH" != "amd64" ]; then MAKEFLAGS="-j $(grep -c ^processor /proc/cpuinfo)" && export MAKEFLAGS && bash link_brotli.sh; fi
-if [ "$ARCH" != "amd64" ]; then MAKEFLAGS="-j $(grep -c ^processor /proc/cpuinfo)" && export MAKEFLAGS && bash link_libsodium.sh; fi
-if [ "$ARCH" != "amd64" ]; then
+    if grep -q DISTRIB_RELEASE=18.04 /etc/lsb-release; then export CGO_LDFLAGS=-no-pie; fi
 
-if grep -q DISTRIB_RELEASE=18.04 /etc/lsb-release; then export CGO_LDFLAGS=-no-pie; fi
     export USE_LIBSODIUM=1
     export USE_LZO=1
-    MAKEFLAGS="-j $(grep -c ^processor /proc/cpuinfo)"
-    export MAKEFLAGS
     make pg_build
 fi
 
