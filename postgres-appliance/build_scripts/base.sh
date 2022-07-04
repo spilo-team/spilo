@@ -137,22 +137,23 @@ for version in $DEB_PG_SUPPORTED_VERSIONS; do
     fi
 
     # Install 3rd party stuff
-    cd timescaledb || exit 1
-    for v in $TIMESCALEDB; do
-        git checkout "$v"
-        sed -i "s/VERSION 3.11/VERSION 3.10/" CMakeLists.txt
-        if BUILD_FORCE_REMOVE=true ./bootstrap -DREGRESS_CHECKS=OFF -DWARNINGS_AS_ERRORS=OFF \
-                -DTAP_CHECKS=OFF -DPG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" \
-                -DAPACHE_ONLY="$TIMESCALEDB_APACHE_ONLY" -DSEND_TELEMETRY_DEFAULT=NO; then
-            make -C build install
-            ls /usr/lib/postgresql/10/lib/
-            strip /usr/lib/postgresql/"$version"/lib/timescaledb*.so
-        fi
-        git reset --hard
-        git clean -f -d
-    done
 
-    cd ..
+    # use subshell to avoid having to cd back (SC2103)
+    (
+        cd timescaledb
+        for v in $TIMESCALEDB; do
+            git checkout "$v"
+            sed -i "s/VERSION 3.11/VERSION 3.10/" CMakeLists.txt
+            if BUILD_FORCE_REMOVE=true ./bootstrap -DREGRESS_CHECKS=OFF -DWARNINGS_AS_ERRORS=OFF \
+                    -DTAP_CHECKS=OFF -DPG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" \
+                    -DAPACHE_ONLY="$TIMESCALEDB_APACHE_ONLY" -DSEND_TELEMETRY_DEFAULT=NO; then
+                make -C build install
+                strip /usr/lib/postgresql/"$version"/lib/timescaledb*.so
+            fi
+            git reset --hard
+            git clean -f -d
+        done
+    )
 
     if [ "$DEMO" != "true" ]; then
         EXTRA_EXTENSIONS=("plantuner-${PLANTUNER_COMMIT}" plprofiler)
@@ -198,25 +199,27 @@ fi
     # build and install missing packages
 for pkg in pgextwlist "${MISSING[@]}" "${MISSING_EXTRAS[@]}"; do
     apt-get source "postgresql-14-${pkg}"
-    cd "$(ls -d -- *"${pkg%?}"*-*/)" || exit 1
-    if [ -f ../"$pkg.patch" ]; then patch -p1 < ../"$pkg".patch; fi
+    # use subshell to avoid having to cd back (SC2103)
+    (
+        cd "$(ls -d -- *"${pkg%?}"*-*/)"
+        if [ -f ../"$pkg.patch" ]; then patch -p1 < ../"$pkg".patch; fi
 
-    if [ "$pkg" = "pgextwlist" ]; then
-        sed -i '/postgresql-all/d' debian/control.in
-        # make it possible to use it from shared_preload_libraries
-        perl -ne 'print unless /PG_TRY/ .. /PG_CATCH/' pgextwlist.c > pgextwlist.c.f
-        grep -E -v '(PG_END_TRY|EmitWarningsOnPlaceholders)' pgextwlist.c.f > pgextwlist.c
-    fi
-    if [ "$pkg" = "pgaudit" ]; then
+        if [ "$pkg" = "pgextwlist" ]; then
+            sed -i '/postgresql-all/d' debian/control.in
+            # make it possible to use it from shared_preload_libraries
+            perl -ne 'print unless /PG_TRY/ .. /PG_CATCH/' pgextwlist.c > pgextwlist.c.f
+            grep -E -v '(PG_END_TRY|EmitWarningsOnPlaceholders)' pgextwlist.c.f > pgextwlist.c
+        fi
+        if [ "$pkg" = "pgaudit" ]; then
             echo "15" > debian/pgversions
         fi
-    pg_buildext updatecontrol
-    if [ "$pkg" = "pgextwlist" ]; then
+        pg_buildext updatecontrol
+        if [ "$pkg" = "pgextwlist" ]; then
             DEB_BUILD_OPTIONS=nocheck debuild -b -uc -us
         else
             DEB_BUILD_OPTIONS=nocheck DEB_PG_SUPPORTED_VERSIONS=$PGVERSION debuild -b -uc -us
         fi
-    cd ..
+    )
     for version in $DEB_PG_SUPPORTED_VERSIONS; do
         for deb in postgresql-"${version}-${pkg}"_*.deb; do
             if [ -f "$deb" ]; then dpkg -i "$deb"; fi

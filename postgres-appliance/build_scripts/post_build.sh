@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -ex
+
 sed -i "s|/var/lib/postgresql.*|$PGHOME:/bin/bash|" /etc/passwd
 
 chown -R postgres:postgres "$PGHOME" "$RW_DIR"

@@ -4,6 +4,8 @@
 ## Install wal-g
 ## -------------------------
 
+set -ex
+
 export DEBIAN_FRONTEND=noninteractive
 MAKEFLAGS="-j $(grep -c ^processor /proc/cpuinfo)"
 export MAKEFLAGS
@@ -22,7 +24,7 @@ if [ "$ARCH" != "amd64" ]; then
     go version
 
     git clone -b "$WALG_VERSION" --recurse-submodules https://github.com/wal-g/wal-g.git
-    cd /wal-g || exit 1
+    cd /wal-g
     go get -v -t -d ./...
     go mod vendor
 
