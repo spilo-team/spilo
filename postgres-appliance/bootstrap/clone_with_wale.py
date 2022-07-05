@@ -27,9 +27,12 @@ def read_configuration():
                         dest='recovery_target_time_string')
     parser.add_argument('--dry-run', action='store_true', help='find a matching backup and build the wal-e '
                         'command to fetch that backup without running it')
+    parser.add_argument('--recovery-target-timeline',
+                        help='the timeline up to which recovery will proceed',
+                        dest='recovery_target_timeline_string')
     args = parser.parse_args()
 
-    options = namedtuple('Options', 'name datadir recovery_target_time dry_run')
+    options = namedtuple('Options', 'name datadir recovery_target_time recovery_target_timeline dry_run')
     if args.recovery_target_time_string:
         recovery_target_time = parse(args.recovery_target_time_string)
         if recovery_target_time.tzinfo is None:
@@ -37,7 +40,12 @@ def read_configuration():
     else:
         recovery_target_time = None
 
-    return options(args.scope, args.datadir, recovery_target_time, args.dry_run)
+    if args.recovery_target_timeline_string == None:
+        recovery_target_timeline = "latest"
+    else:
+        recovery_target_timeline = args.recovery_target_timeline_string
+
+    return options(args.scope, args.datadir, recovery_target_time, recovery_target_timeline, args.dry_run)
 
 
 def build_wale_command(command, datadir=None, backup=None):
@@ -65,8 +73,12 @@ def fix_output(output):
             yield '\t'.join(line.split())
 
 
-def choose_backup(backup_list, recovery_target_time):
+def choose_backup(backup_list, recovery_target_time, recovery_target_timeline):
     """ pick up the latest backup file starting before time recovery_target_time"""
+    
+    logger.info('-------- START PRINTING TIMELINE IN CHOOSE BACKUP -----------')
+    logger.info(recovery_target_timeline)
+    logger.info('-------- END PRINTING TIMELINE CHOOSE BACKUP -----------')
 
     match_timestamp = match = None
     for backup in backup_list:
@@ -140,7 +152,11 @@ def get_wale_environments(env):
     yield name, orig_value
 
 
-def find_backup(recovery_target_time, env):
+def find_backup(recovery_target_time, recovery_target_timeline, env):
+    logger.info('-------- START PRINTING TIMELINE IN FIND BACKUP -----------')
+    logger.info(recovery_target_timeline)
+    logger.info('-------- END PRINTING TIMELINE FIND BACKUP -----------')
+
     old_value = None
     for name, value in get_wale_environments(env):
         logger.info('Trying %s for clone', value)
@@ -163,7 +179,7 @@ def find_backup(recovery_target_time, env):
 def run_clone_from_s3(options):
     env = os.environ.copy()
 
-    backup_name, update_envdir = find_backup(options.recovery_target_time, env)
+    backup_name, update_envdir = find_backup(options.recovery_target_time, options.recovery_target_timeline, env)
 
     backup_fetch_cmd = build_wale_command('backup-fetch', options.datadir, backup_name)
     logger.info("cloning cluster %s using %s", options.name, ' '.join(backup_fetch_cmd))
