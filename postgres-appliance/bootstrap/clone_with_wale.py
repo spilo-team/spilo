@@ -75,10 +75,6 @@ def fix_output(output):
 
 def choose_backup(backup_list, recovery_target_time, recovery_target_timeline):
     """ pick up the latest backup file starting before time recovery_target_time"""
-    
-    logger.info('-------- START PRINTING TIMELINE IN CHOOSE BACKUP -----------')
-    logger.info(recovery_target_timeline)
-    logger.info('-------- END PRINTING TIMELINE CHOOSE BACKUP -----------')
 
     match_timestamp = match = None
     for backup in backup_list:
@@ -153,10 +149,6 @@ def get_wale_environments(env):
 
 
 def find_backup(recovery_target_time, recovery_target_timeline, env):
-    logger.info('-------- START PRINTING TIMELINE IN FIND BACKUP -----------')
-    logger.info(recovery_target_timeline)
-    logger.info('-------- END PRINTING TIMELINE FIND BACKUP -----------')
-
     old_value = None
     for name, value in get_wale_environments(env):
         logger.info('Trying %s for clone', value)
