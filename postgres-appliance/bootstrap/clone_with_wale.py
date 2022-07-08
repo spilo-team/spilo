@@ -166,7 +166,7 @@ def find_backup(recovery_target_time, recovery_target_timeline, env):
         backup_list = list_backups(env)
         if backup_list:
             if recovery_target_time:
-                backup = choose_backup(backup_list, recovery_target_time)
+                backup = choose_backup(backup_list, recovery_target_time,recovery_target_timeline)
                 if backup:
                     return backup, (name if value != old_value else None)
             else:  # We assume that the LATEST backup will be for the biggest postgres version!
