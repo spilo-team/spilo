@@ -78,11 +78,12 @@ def choose_backup(backup_list, recovery_target_time, recovery_target_timeline):
 
     match_timestamp = match = None
     for backup in backup_list:
-        last_modified = parse(backup['last_modified'])
-        if last_modified < recovery_target_time:
-            if match is None or last_modified > match_timestamp:
-                match = backup
-                match_timestamp = last_modified
+        if int(backup["name"][5:13], 16) == int(recovery_target_timeline,16):
+            last_modified = parse(backup['last_modified'])
+            if last_modified < recovery_target_time:
+                if match is None or last_modified > match_timestamp:
+                    match = backup
+                    match_timestamp = last_modified
     if match is not None:
         return match['name']
 
