@@ -20,16 +20,20 @@ logger = logging.getLogger(__name__)
 
 def read_configuration():
     parser = argparse.ArgumentParser(description="Script to clone from S3 with support for point-in-time-recovery")
-    parser.add_argument('--scope', required=True, help='target cluster name')
-    parser.add_argument('--datadir', required=True, help='target cluster postgres data directory')
+    parser.add_argument('--scope', required=True, 
+                        help='target cluster name')
+    parser.add_argument('--datadir', required=True, 
+                        help='target cluster postgres data directory')
     parser.add_argument('--recovery-target-time',
                         help='the timestamp up to which recovery will proceed (including time zone)',
                         dest='recovery_target_time_string')
-    parser.add_argument('--dry-run', action='store_true', help='find a matching backup and build the wal-e '
+    parser.add_argument('--dry-run', action='store_true', 
+                        help='find a matching backup and build the wal-e '
                         'command to fetch that backup without running it')
     parser.add_argument('--recovery-target-timeline',
-                        help='the timeline up to which recovery will proceed',
-                        dest='recovery_target_timeline_string')
+                        help='the timeline up to which recovery will proceed. Leave empty for latest.',
+                        dest='recovery_target_timeline',
+                        type=lambda timeline_id: int(timeline_id,16))
     args = parser.parse_args()
 
     options = namedtuple('Options', 'name datadir recovery_target_time recovery_target_timeline dry_run')
@@ -40,13 +44,21 @@ def read_configuration():
     else:
         recovery_target_time = None
 
-    if args.recovery_target_timeline_string == None:
-        recovery_target_timeline = "latest"
+    if args.recovery_target_timeline == None:
+        recovery_target_timeline = get_latest_timeline
     else:
-        recovery_target_timeline = args.recovery_target_timeline_string
+        recovery_target_timeline = int(args.recovery_target_timeline,16)
 
     return options(args.scope, args.datadir, recovery_target_time, recovery_target_timeline, args.dry_run)
 
+def get_latest_timeline():
+    env = os.environ.copy()
+    backup_list = list_backups(env)
+    latest_timeline_id = int("00000000",16)
+    for backup in backup_list:
+        if int(backup["name"][5:13], 16) > latest_timeline_id:
+            latest_timeline_id = int(backup["name"][5:13], 16)
+    return latest_timeline_id
 
 def build_wale_command(command, datadir=None, backup=None):
     cmd = ['wal-g' if os.getenv('USE_WALG_RESTORE') == 'true' else 'wal-e'] + [command]
@@ -78,7 +90,8 @@ def choose_backup(backup_list, recovery_target_time, recovery_target_timeline):
 
     match_timestamp = match = None
     for backup in backup_list:
-        if int(backup["name"][5:13], 16) == int(recovery_target_timeline,16):
+        timeline_id = int(backup["name"][5:13], 16)
+        if timeline_id == recovery_target_timeline:
             last_modified = parse(backup['last_modified'])
             if last_modified < recovery_target_time:
                 if match is None or last_modified > match_timestamp:
