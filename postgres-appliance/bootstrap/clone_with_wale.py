@@ -45,7 +45,7 @@ def read_configuration():
         recovery_target_time = None
 
     if args.recovery_target_timeline == None:
-        recovery_target_timeline = get_latest_timeline
+        recovery_target_timeline = get_latest_timeline()
     else:
         recovery_target_timeline = int(args.recovery_target_timeline,16)
 
@@ -176,7 +176,7 @@ def find_backup(recovery_target_time, recovery_target_timeline, env):
                 if backup:
                     return backup, (name if value != old_value else None)
             else:  # We assume that the LATEST backup will be for the biggest postgres version!
-                return 'LATEST', (name if value != old_value else None)
+                return get_latest_timeline(), (name if value != old_value else None)
     if recovery_target_time:
         raise Exception('Could not find any backups prior to the point in time {0}'.format(recovery_target_time))
     raise Exception('Could not find any backups')
