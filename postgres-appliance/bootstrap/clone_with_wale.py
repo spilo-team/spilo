@@ -46,8 +46,8 @@ def read_configuration():
 
     if args.recovery_target_timeline == None:
         recovery_target_timeline = get_latest_timeline()
-    else:
-        recovery_target_timeline = int(args.recovery_target_timeline,16)
+    # else:
+    #     recovery_target_timeline = int(args.recovery_target_timeline,16)
 
     return options(args.scope, args.datadir, recovery_target_time, recovery_target_timeline, args.dry_run)
 
